@@ -1,9 +1,20 @@
 package ru.iu3.fclient;
 
+import androidx.activity.result.ActivityResult;
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 
 import ru.iu3.fclient.databinding.ActivityMainBinding;
 
@@ -17,26 +28,90 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
 
+    ActivityResultLauncher activityResultLauncher;
+
+    public static byte[] stringToHex(String s)
+    {
+        byte[] hex;
+        try
+        {
+            hex = Hex.decodeHex(s.toCharArray());
+        }
+        catch (DecoderException ex)
+        {
+            hex = null;
+        }
+        return hex;
+    }
+
+//    public void onButtonClick(View v) // Toast Test
+//    {
+//        Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show();
+//    }
+
+//    public void onButtonClick(View v) // encryption test
+//    {
+//        byte[] key = stringToHex("0123456789ABCDEF0123456789ABCDE0");
+//        byte[] enc = encrypt(key, stringToHex("001002010050A0B102"));
+//        byte[] dec = decrypt(key, enc);
+//        String s = new String(Hex.encodeHex(dec)).toUpperCase();
+//        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+//    }
+
+    public void onButtonClick(View v)
+    {
+        Intent it = new Intent(this, PinpadActivity.class);
+//            startActivity(it);
+        activityResultLauncher.launch(it);
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        int res = initRng();
-        byte[] v = randomBytes(16);
+        activityResultLauncher  = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                new ActivityResultCallback () {
+                    @Override
+                    public void onActivityResult(Object obj) {
+                        if (obj instanceof ActivityResult) {
+                            ActivityResult result = (ActivityResult) obj;
+                            if (result.getResultCode() == Activity.RESULT_OK) {
+                                Intent data = result.getData();
+                                // обработка результата
+                                String pin = data.getStringExtra("pin");
+                                Toast.makeText(MainActivity.this, pin, Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }
 
-        String testString = "Test String for encryption";
-        byte[] testByteArray = testString.getBytes();
-        byte[] encryptedByteArray = encrypt(v, testByteArray);
-        byte[] decryptedByteArray = decrypt(v, encryptedByteArray);
-        String decryptedString = new String(decryptedByteArray);
+                    public void onActivityResult(ActivityResult result) {
+                        if (result.getResultCode() == Activity.RESULT_OK) {
+                            Intent data = result.getData();
+                            // обработка результата
+                            String pin = data.getStringExtra("pin");
+                            Toast.makeText(MainActivity.this, pin, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
 
-        // Example of a call to a native method
-        TextView tv = findViewById(R.id.sample_text);
-        TextView encrypted_text = findViewById(R.id.encrypted);
 
-        encrypted_text.setText(stringFromJNI());
-        tv.setText(decryptedString);
+//        int res = initRng();
+//        byte[] v = randomBytes(16);
+//
+//        String testString = "Test String for encryption";
+//        byte[] testByteArray = testString.getBytes();
+//        byte[] encryptedByteArray = encrypt(v, testByteArray);
+//        byte[] decryptedByteArray = decrypt(v, encryptedByteArray);
+//        String decryptedString = new String(decryptedByteArray);
+//
+//        // Example of a call to a native method
+//        TextView tv = findViewById(R.id.sample_text);
+//        TextView encrypted_text = findViewById(R.id.encrypted);
+//
+//        encrypted_text.setText(stringFromJNI());
+//        tv.setText(decryptedString);
     }
 
     /**
